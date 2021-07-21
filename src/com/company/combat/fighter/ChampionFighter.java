@@ -8,26 +8,27 @@ import java.util.Map;
 
 public class ChampionFighter extends FighterCombatClass {
 
-    public ChampionFighter(int characterLevel,
+    public ChampionFighter(String characterName,
+                           int characterLevel,
                            int numberWeaponDamageDie,
                            int weaponDamageDie,
                            int statBonus,
                            int critDie,
                            int proficiencyBonus) {
-        super(characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
+        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
     }
 
     @Override
-    public void doCombatTurn(int accuracyBonus, int enemyArmorClass) {
+    public void doCombatTurn(int enemyArmorClass) {
         List<WeaponAttackResults> resultsList = new ArrayList<>();
         if (!usedActionSurge && isActionSurgeUnlocked) {
             // Use Limit Break and then Iai
             usedActionSurge = true;
-            resultsList.addAll(doMultiAttack(accuracyBonus, enemyArmorClass));
-            resultsList.addAll(doMultiAttack(accuracyBonus, enemyArmorClass));
+            resultsList.addAll(doMultiAttack(enemyArmorClass));
+            resultsList.addAll(doMultiAttack(enemyArmorClass));
         } else {
             // Attack normally.
-            resultsList.addAll(doMultiAttack(accuracyBonus, enemyArmorClass));
+            resultsList.addAll(doMultiAttack(enemyArmorClass));
         }
 
         int totalDamageInTurn = 0;
@@ -36,14 +37,14 @@ public class ChampionFighter extends FighterCombatClass {
         }
 
         // Determine if this turn's attack was the largest yet.
-        int singleLargestAttackDamage = singleLargestAttackDamageMap.get(enemyArmorClass).get(accuracyBonus);
+        int singleLargestAttackDamage = singleLargestAttackDamageMap.get(enemyArmorClass);
         if(totalDamageInTurn > singleLargestAttackDamage) {
-            singleLargestAttackDamageMap.get(enemyArmorClass).put(accuracyBonus, totalDamageInTurn);
+            singleLargestAttackDamageMap.put(enemyArmorClass, totalDamageInTurn);
         }
     }
 
     @Override
-    public Map<String, Map<Integer, Map<Integer, ?>>> getStatistics(int numberOfTurns) {
+    public Map<String, Map<Integer, ?>> getStatistics(int numberOfTurns) {
         return super.getStatistics(numberOfTurns);
     }
 }

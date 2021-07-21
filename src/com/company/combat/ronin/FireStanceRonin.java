@@ -15,10 +15,10 @@ public class FireStanceRonin extends RoninCombatClass {
     protected boolean isIgniteUsed = false;
     protected boolean isTargetBurning = false;
 
-    // Outputs
-    protected final Map<Integer, Map<Integer, Integer>> totalHiganbanaDamageMap = new LinkedHashMap<>();
-    protected final Map<Integer, Map<Integer, Integer>> totalIgniteDamageMap = new LinkedHashMap<>();
-    protected final Map<Integer, Map<Integer, Integer>> totalTurnsEnemyIgnitedMap = new LinkedHashMap<>();
+    // Outputs - Enemy Armor Class to Some result.
+    protected final Map<Integer, Integer> totalHiganbanaDamageMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalIgniteDamageMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalTurnsEnemyIgnitedMap = new LinkedHashMap<>();
 
     private final Function<IaiFunctionParameters, Void> higanbanaFunction;
 
@@ -40,14 +40,15 @@ public class FireStanceRonin extends RoninCombatClass {
         };
     }
 
-    public FireStanceRonin(int characterLevel,
+    public FireStanceRonin(String characterName,
+                           int characterLevel,
                            int numberWeaponDamageDie,
                            int weaponDamageDie,
                            int statBonus,
                            int critDie,
                            int proficiencyBonus,
                            boolean isTargetMindsEye) {
-        super(characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
+        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
         this.isTargetMindsEye = isTargetMindsEye;
         this.canUseIgnite = characterLevel >= 2;
         iaiToIaiMinimumCost.put(HIGANBANA_ID, 5);
@@ -55,25 +56,21 @@ public class FireStanceRonin extends RoninCombatClass {
         iaiToDiePerCharge.put(HIGANBANA_ID, 1);
         iaiToMinimumLevel.put(HIGANBANA_ID, 3);
 
-        // Populate the AC -> ACC Bonus map plus initialize the output maps with zero values to avoid NPEs.
-        for (int armorClass = 10; armorClass <= 25; armorClass++) {
-            for (int accBonus = 5; accBonus <= 9; accBonus++) {
-                totalHiganbanaDamageMap.computeIfAbsent(armorClass, k -> new LinkedHashMap<>()).computeIfAbsent(accBonus, k -> 0);
-                totalIgniteDamageMap.computeIfAbsent(armorClass, k -> new LinkedHashMap<>()).computeIfAbsent(accBonus, k -> 0);
-                totalTurnsEnemyIgnitedMap.computeIfAbsent(armorClass, k -> new LinkedHashMap<>()).computeIfAbsent(accBonus, k -> 0);
-            }
+        for (int armorClass : ARMOR_CLASSES) {
+            totalHiganbanaDamageMap.computeIfAbsent(armorClass, k -> 0);
+            totalIgniteDamageMap.computeIfAbsent(armorClass, k -> 0);
+            totalTurnsEnemyIgnitedMap.computeIfAbsent(armorClass, k -> 0);
         }
 
         // Define Higanbana Function
         higanbanaFunction = iaiFunctionParameters -> {
-            int accBonus = iaiFunctionParameters.getAccuracyBonus();
             int armorClass = iaiFunctionParameters.getArmorClass();
 
-            int d20Roll = rollD20(isTargetMindsEye);
-            boolean hitSuccess = determineHit(d20Roll, accBonus, armorClass);
+            int higanbanaAttackRoll = rollD20(isTargetMindsEye);
+            boolean hitSuccess = determineHit(higanbanaAttackRoll, armorClass);
 
             if (hitSuccess) {
-                boolean critHit = isCriticalHit((d20Roll));
+                boolean critHit = isCriticalHit((higanbanaAttackRoll));
 
                 int higanbanaDamage = 0;
                 for (int i = 0; i < energyCharges; i += iaiToDiePerCharge.get(HIGANBANA_ID)) {
@@ -84,16 +81,16 @@ public class FireStanceRonin extends RoninCombatClass {
                     }
                 }
                 // Accumulate total damage.
-                int totalDamage = totalDamageMap.get(armorClass).get(accBonus);
-                totalDamageMap.get(armorClass).put(accBonus, totalDamage + higanbanaDamage);
+                int totalDamage = totalDamageMap.get(armorClass);
+                totalDamageMap.put(armorClass, totalDamage + higanbanaDamage);
                 // Accumulate total higanbana damage.
-                int totalHiganbanaDamage = totalHiganbanaDamageMap.get(armorClass).get(accBonus);
-                totalHiganbanaDamageMap.get(armorClass).put(accBonus, totalHiganbanaDamage + higanbanaDamage);
+                int totalHiganbanaDamage = totalHiganbanaDamageMap.get(armorClass);
+                totalHiganbanaDamageMap.put(armorClass, totalHiganbanaDamage + higanbanaDamage);
 
                 // Determine if this turn's attack was the largest yet.
-                int singleLargestAttackDamage = singleLargestAttackDamageMap.get(armorClass).get(accBonus);
-                if(higanbanaDamage > singleLargestAttackDamage) {
-                    singleLargestAttackDamageMap.get(armorClass).put(accBonus, higanbanaDamage);
+                int singleLargestAttackDamage = singleLargestAttackDamageMap.get(armorClass);
+                if (higanbanaDamage > singleLargestAttackDamage) {
+                    singleLargestAttackDamageMap.put(armorClass, higanbanaDamage);
                 }
 
                 // Ignite the enemy.
@@ -122,15 +119,15 @@ public class FireStanceRonin extends RoninCombatClass {
     }
 
     @Override
-    public void doCombatTurn(int accuracyBonus, int enemyArmorClass) {
+    public void doCombatTurn(int enemyArmorClass) {
         // Simulate Ignite damage.
         if (isTargetBurning) {
             // Increment total number of ignite turns.
-            int totalTurnsEnemyIgnited = totalTurnsEnemyIgnitedMap.get(enemyArmorClass).get(accuracyBonus);
+            int totalTurnsEnemyIgnited = totalTurnsEnemyIgnitedMap.get(enemyArmorClass);
             totalTurnsEnemyIgnited++;
-            totalTurnsEnemyIgnitedMap.get(enemyArmorClass).put(accuracyBonus, totalTurnsEnemyIgnited);
+            totalTurnsEnemyIgnitedMap.put(enemyArmorClass, totalTurnsEnemyIgnited);
 
-            doIgniteDamage(accuracyBonus, enemyArmorClass);
+            doIgniteDamage(enemyArmorClass);
             int savingThrow = rollD20(false) + 3;
             if (savingThrow >= swordArtDc) {
                 isTargetBurning = false;
@@ -142,27 +139,27 @@ public class FireStanceRonin extends RoninCombatClass {
             // Use Limit Break and then Iai
             usedLimitBreak = true;
             energyCharges += chargesPerLimitBreak;
-            int totalEnergyCharges = totalEnergyChargesAccumulatedMap.get(enemyArmorClass).get(accuracyBonus);
+            int totalEnergyCharges = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
             totalEnergyCharges += chargesPerLimitBreak;
-            totalEnergyChargesAccumulatedMap.get(enemyArmorClass).put(accuracyBonus, totalEnergyCharges);
+            totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyCharges);
 
-            executeIai(enemyArmorClass, accuracyBonus, HIGANBANA_ID);
+            executeIai(enemyArmorClass, HIGANBANA_ID);
             energyCharges = 0;
 
         } else if (energyCharges >= iaiToIaiMinimumCost.get(HIGANBANA_ID)) {
             // Use Iai to avoid over-capping.
-            executeIai(enemyArmorClass, accuracyBonus, HIGANBANA_ID);
+            executeIai(enemyArmorClass, HIGANBANA_ID);
             energyCharges = 0;
 
         } else {
             // Attack normally.
-            WeaponAttackResults weaponAttackResults = doWeaponAttack(accuracyBonus, enemyArmorClass);
+            WeaponAttackResults weaponAttackResults = doWeaponAttack(enemyArmorClass);
             if (weaponAttackResults.didHit()) {
                 energyCharges += 1;
                 // Increment total number of elemental charges accumulated.
-                int totalEnergyChargesAcc = totalEnergyChargesAccumulatedMap.get(enemyArmorClass).get(accuracyBonus);
+                int totalEnergyChargesAcc = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
                 totalEnergyChargesAcc++;
-                totalEnergyChargesAccumulatedMap.get(enemyArmorClass).put(accuracyBonus, totalEnergyChargesAcc);
+                totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyChargesAcc);
 
                 if (!isTargetBurning && canUseIgnite && !isIgniteUsed) {
                     isIgniteUsed = true;
@@ -172,56 +169,46 @@ public class FireStanceRonin extends RoninCombatClass {
         }
     }
 
-    protected void doIgniteDamage(int accuracyBonus, int enemyArmorClass) {
+    protected void doIgniteDamage(int enemyArmorClass) {
         int igniteDamage = rollDamage(igniteNumberOfDie.apply(characterLevel), IGNITE_DAMAGE_DIE, 0, 0);
-        int totalIgniteDamage = totalIgniteDamageMap.get(enemyArmorClass).get(accuracyBonus);
+        int totalIgniteDamage = totalIgniteDamageMap.get(enemyArmorClass);
         totalIgniteDamage += igniteDamage;
-        totalIgniteDamageMap.get(enemyArmorClass).put(accuracyBonus, totalIgniteDamage);
+        totalIgniteDamageMap.put(enemyArmorClass, totalIgniteDamage);
         // Accumulate total damage.
-        int totalDamage = totalDamageMap.get(enemyArmorClass).get(accuracyBonus);
-        totalDamageMap.get(enemyArmorClass).put(accuracyBonus, totalDamage + igniteDamage);
+        int totalDamage = totalDamageMap.get(enemyArmorClass);
+        totalDamageMap.put(enemyArmorClass, totalDamage + igniteDamage);
     }
 
     @Override
-    public Map<String, Map<Integer, Map<Integer, ?>>> getStatistics(int numberOfTurns) {
-        final Map<Integer, Map<Integer, Double>> averageHiganbanaDamagePerTurnMap = new LinkedHashMap<>();
+    public Map<String, Map<Integer, ?>> getStatistics(int numberOfTurns) {
+        final Map<Integer, Double> averageHiganbanaDamagePerTurnMap = new LinkedHashMap<>();
         // Average out all damage done over all combat rounds and SIM runs.
-        for (Map.Entry<Integer, Map<Integer, Integer>> entry : totalHiganbanaDamageMap.entrySet()) {
-            for (Map.Entry<Integer, Integer> innerEntry : entry.getValue().entrySet()) {
-                averageHiganbanaDamagePerTurnMap.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>()).put(innerEntry.getKey(), innerEntry.getValue() / (double) numberOfTurns);
-            }
+        for (Map.Entry<Integer, Integer> entry : totalHiganbanaDamageMap.entrySet()) {
+            averageHiganbanaDamagePerTurnMap.put(entry.getKey(),  entry.getValue() / (double) numberOfTurns);
         }
 
-        final Map<Integer, Map<Integer, Double>> percentDamageFromHiganbana = new LinkedHashMap<>();
+        final Map<Integer, Double> percentDamageFromHiganbana = new LinkedHashMap<>();
         // Average out all attacks done and amount of hits.
-        for (Map.Entry<Integer, Map<Integer, Integer>> entry : totalHiganbanaDamageMap.entrySet()) {
-            for (Map.Entry<Integer, Integer> innerEntry : entry.getValue().entrySet()) {
-                percentDamageFromHiganbana.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>()).put(innerEntry.getKey(), 100.0 * innerEntry.getValue() / totalDamageMap.get(entry.getKey()).get(innerEntry.getKey()));
-            }
+        for (Map.Entry<Integer, Integer> entry : totalHiganbanaDamageMap.entrySet()) {
+            percentDamageFromHiganbana.put(entry.getKey(),  100.0 * entry.getValue() / totalDamageMap.get(entry.getKey()));
         }
 
-        final Map<Integer, Map<Integer, Double>> averageIgniteDamagePerTurnMap = new LinkedHashMap<>();
+        final Map<Integer, Double> averageIgniteDamagePerTurnMap = new LinkedHashMap<>();
         // Average out all damage done over all combat rounds and SIM runs.
-        for (Map.Entry<Integer, Map<Integer, Integer>> entry : totalIgniteDamageMap.entrySet()) {
-            for (Map.Entry<Integer, Integer> innerEntry : entry.getValue().entrySet()) {
-                averageIgniteDamagePerTurnMap.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>()).put(innerEntry.getKey(), innerEntry.getValue() / (double) numberOfTurns );
-            }
+        for (Map.Entry<Integer, Integer> entry : totalIgniteDamageMap.entrySet()) {
+            averageIgniteDamagePerTurnMap.put(entry.getKey(),  entry.getValue() / (double) numberOfTurns);
         }
 
-        final Map<Integer, Map<Integer, Double>> percentDamageFromIgnite = new LinkedHashMap<>();
+        final Map<Integer, Double> percentDamageFromIgnite = new LinkedHashMap<>();
         // Average out all attacks done and amount of hits.
-        for (Map.Entry<Integer, Map<Integer, Integer>> entry : totalIgniteDamageMap.entrySet()) {
-            for (Map.Entry<Integer, Integer> innerEntry : entry.getValue().entrySet()) {
-                percentDamageFromIgnite.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>()).put(innerEntry.getKey(), 100.0 * innerEntry.getValue() / totalDamageMap.get(entry.getKey()).get(innerEntry.getKey()));
-            }
+        for (Map.Entry<Integer, Integer> entry : totalIgniteDamageMap.entrySet()) {
+            percentDamageFromIgnite.put(entry.getKey(),  100.0 * entry.getValue() / totalDamageMap.get(entry.getKey()));
         }
 
-        final Map<Integer, Map<Integer, Double>> percentageTurnsIgnited = new LinkedHashMap<>();
+        final Map<Integer, Double> percentageTurnsIgnited = new LinkedHashMap<>();
         // Average out all damage done over all combat rounds and SIM runs.
-        for (Map.Entry<Integer, Map<Integer, Integer>> entry : totalTurnsEnemyIgnitedMap.entrySet()) {
-            for (Map.Entry<Integer, Integer> innerEntry : entry.getValue().entrySet()) {
-                percentageTurnsIgnited.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>()).put(innerEntry.getKey(), 100.0 * innerEntry.getValue() / numberOfTurns);
-            }
+        for (Map.Entry<Integer, Integer> entry : totalTurnsEnemyIgnitedMap.entrySet()) {
+            percentageTurnsIgnited.put(entry.getKey(),  100.0 * entry.getValue() / numberOfTurns);
         }
 
 

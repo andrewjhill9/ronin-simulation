@@ -4,7 +4,6 @@ import com.company.combat.BaseCombatClass;
 import com.company.combat.WeaponAttackResults;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,15 +12,16 @@ public abstract class FighterCombatClass extends BaseCombatClass {
     protected final int multiAttackNumber;
     protected boolean usedActionSurge = false;
 
-    // Outputs
+    // Outputs - Enemy Armor Class to Some result.
 
-    public FighterCombatClass(int characterLevel,
+    public FighterCombatClass(String characterName,
+                              int characterLevel,
                               int numberWeaponDamageDie,
                               int weaponDamageDie,
                               int statBonus,
                               int critDie,
                               int proficiencyBonus) {
-        super(characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
+        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
         this.isActionSurgeUnlocked = characterLevel >= 2;
         if(characterLevel >= 20) {
             this.multiAttackNumber = 4;
@@ -51,14 +51,14 @@ public abstract class FighterCombatClass extends BaseCombatClass {
     }
 
     @Override
-    public Map<String, Map<Integer, Map<Integer, ?>>> getStatistics(int numberOfTurns) {
+    public Map<String, Map<Integer, ?>> getStatistics(int numberOfTurns) {
         return super.getStatistics(numberOfTurns);
     }
 
-    protected List<WeaponAttackResults> doMultiAttack(int accuracyBonus, int enemyArmorClass) {
+    protected List<WeaponAttackResults> doMultiAttack(int enemyArmorClass) {
         List<WeaponAttackResults> results = new ArrayList<>();
         for(int i = 0; i < multiAttackNumber; i++) {
-            results.add(doWeaponAttack(accuracyBonus, enemyArmorClass));
+            results.add(doWeaponAttack(enemyArmorClass));
         }
         return results;
     }

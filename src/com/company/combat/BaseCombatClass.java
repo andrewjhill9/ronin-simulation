@@ -8,7 +8,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class BaseCombatClass implements CombatClass {
     // INPUTS
-    protected final Map<Integer, List<Integer>> armorClassToAccBonus = new LinkedHashMap<>();
+    protected static final List<Integer> ARMOR_CLASSES = new ArrayList<>();
+    protected final String characterName;
     protected final int characterLevel;
     protected final int numberWeaponDamageDie; // e.g. xd6
     protected final int weaponDamageDie; // 1dx
@@ -16,19 +17,27 @@ public abstract class BaseCombatClass implements CombatClass {
     protected final int critDie; // e.g., 19 for 19 or 20 crit
     protected final int proficiencyBonus;
 
-    // Outputs
-    protected final Map<Integer, Map<Integer, Integer>> singleLargestAttackDamageMap = new LinkedHashMap<>();
-    protected final Map<Integer, Map<Integer, Integer>> totalDamageMap = new LinkedHashMap<>();
-    protected final Map<Integer, Map<Integer, Integer>> totalNumWeaponAttacksMap = new LinkedHashMap<>();
-    protected final Map<Integer, Map<Integer, Integer>> totalNumWeaponAttacksHitMap = new LinkedHashMap<>();
-    protected final Map<Integer, Map<Integer, Integer>> totalWeaponDamageMap = new LinkedHashMap<>();
+    // Outputs - Enemy Armor Class to Some result.
+    protected final Map<Integer, Integer> singleLargestAttackDamageMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalDamageMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalNumWeaponAttacksMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalNumWeaponAttacksHitMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalWeaponDamageMap = new LinkedHashMap<>();
 
-    public BaseCombatClass(int characterLevel,
+    static {
+        for (int armorClass = 10; armorClass <= 25; armorClass++) {
+            ARMOR_CLASSES.add(armorClass);
+        }
+    }
+
+    public BaseCombatClass(String characterName,
+                           int characterLevel,
                            int numberWeaponDamageDie,
                            int weaponDamageDie,
                            int statBonus,
                            int critDie,
                            int proficiencyBonus) {
+        this.characterName = characterName;
         this.characterLevel = characterLevel;
         this.numberWeaponDamageDie = numberWeaponDamageDie;
         this.weaponDamageDie = weaponDamageDie;
@@ -36,45 +45,39 @@ public abstract class BaseCombatClass implements CombatClass {
         this.critDie = critDie;
         this.proficiencyBonus = proficiencyBonus;
 
-        // Populate the AC -> ACC Bonus map plus initialize the output maps with zero values to avoid NPEs.
-        for (int armorClass = 10; armorClass <= 25; armorClass++) {
-            for (int accBonus = 5; accBonus <= 9; accBonus++) {
-                armorClassToAccBonus.computeIfAbsent(armorClass, k -> new ArrayList<>()).add(accBonus);
-                totalDamageMap.computeIfAbsent(armorClass, k -> new LinkedHashMap<>()).computeIfAbsent(accBonus, k -> 0);
-                totalNumWeaponAttacksMap.computeIfAbsent(armorClass, k -> new LinkedHashMap<>()).computeIfAbsent(accBonus, k -> 0);
-                totalNumWeaponAttacksHitMap.computeIfAbsent(armorClass, k -> new LinkedHashMap<>()).computeIfAbsent(accBonus, k -> 0);
-                totalWeaponDamageMap.computeIfAbsent(armorClass, k -> new LinkedHashMap<>()).computeIfAbsent(accBonus, k -> 0);
-                singleLargestAttackDamageMap.computeIfAbsent(armorClass, k -> new LinkedHashMap<>()).computeIfAbsent(accBonus, k -> 0);
-            }
+        for (int armorClass: ARMOR_CLASSES) {
+            totalDamageMap.computeIfAbsent(armorClass, k -> 0);
+            totalNumWeaponAttacksMap.computeIfAbsent(armorClass, k -> 0);
+            totalNumWeaponAttacksHitMap.computeIfAbsent(armorClass, k -> 0);
+            totalWeaponDamageMap.computeIfAbsent(armorClass, k -> 0);
+            singleLargestAttackDamageMap.computeIfAbsent(armorClass, k -> 0);
         }
     }
 
     @Override
-    public Map<String, Map<Integer, Map<Integer, ?>>> getStatistics(int numberOfTurns) {
-        final Map<Integer, Map<Integer, Double>> averageTotalDamagePerTurnMap = new LinkedHashMap<>();
+    public String getName() {
+        return characterName;
+    }
+
+    @Override
+    public Map<String, Map<Integer, ?>> getStatistics(int numberOfTurns) {
+        final Map<Integer, Double> averageTotalDamagePerTurnMap = new LinkedHashMap<>();
         // Average out all damage done over all combat rounds and SIM runs.
-        for (Map.Entry<Integer, Map<Integer, Integer>> entry : totalDamageMap.entrySet()) {
-            for (Map.Entry<Integer, Integer> innerEntry : entry.getValue().entrySet()) {
-                averageTotalDamagePerTurnMap.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>()).put(innerEntry.getKey(), innerEntry.getValue() / (double)numberOfTurns);
-            }
+        for (Map.Entry<Integer, Integer> entry : totalDamageMap.entrySet()) {
+            averageTotalDamagePerTurnMap.put(entry.getKey(), entry.getValue() / (double) numberOfTurns);
         }
 
-        final Map<Integer, Map<Integer, Double>> averageTotalWeaponDamagePerTurnMap = new LinkedHashMap<>();
+        final Map<Integer, Double> averageTotalWeaponDamagePerTurnMap = new LinkedHashMap<>();
         // Average out all damage done over all combat rounds and SIM runs.
-        for (Map.Entry<Integer, Map<Integer, Integer>> entry : totalWeaponDamageMap.entrySet()) {
-            for (Map.Entry<Integer, Integer> innerEntry : entry.getValue().entrySet()) {
-                averageTotalWeaponDamagePerTurnMap.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>()).put(innerEntry.getKey(), innerEntry.getValue() / (double)numberOfTurns);
-            }
+        for (Map.Entry<Integer, Integer> entry : totalWeaponDamageMap.entrySet()) {
+            averageTotalWeaponDamagePerTurnMap.put(entry.getKey(), entry.getValue() / (double) numberOfTurns);
         }
 
-        final Map<Integer, Map<Integer, Double>> attackAccuracyMap = new LinkedHashMap<>();
+        final Map<Integer, Double> attackAccuracyMap = new LinkedHashMap<>();
         // Average out all attacks done and amount of hits.
-        for (Map.Entry<Integer, Map<Integer, Integer>> entry : totalNumWeaponAttacksMap.entrySet()) {
-            for (Map.Entry<Integer, Integer> innerEntry : entry.getValue().entrySet()) {
-                double averageAccuracy = (double)totalNumWeaponAttacksHitMap.get(entry.getKey()).get(innerEntry.getKey()) /
-                        totalNumWeaponAttacksMap.get(entry.getKey()).get(innerEntry.getKey());
-                attackAccuracyMap.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>()).put(innerEntry.getKey(), averageAccuracy);
-            }
+        for (Map.Entry<Integer, Integer> entry : totalNumWeaponAttacksMap.entrySet()) {
+            double averageAccuracy = (double) totalNumWeaponAttacksHitMap.get(entry.getKey()) / totalNumWeaponAttacksMap.get(entry.getKey());
+            attackAccuracyMap.put(entry.getKey(), averageAccuracy);
         }
 
 
@@ -94,33 +97,33 @@ public abstract class BaseCombatClass implements CombatClass {
     /**
      * @return 0 if weapon attack misses. 1 if weapon attack hits. 2 if weapon attack crits.
      */
-    protected WeaponAttackResults doWeaponAttack(int accuracyBonus, int enemyArmorClass) {
+    protected WeaponAttackResults doWeaponAttack(int enemyArmorClass) {
         // Attack normally.
         int attackRoll = rollD20(false);
-        boolean doesAttackHit = determineHit(attackRoll, accuracyBonus, enemyArmorClass);
+        boolean doesAttackHit = determineHit(attackRoll, enemyArmorClass);
         boolean isCriticalHit = false;
         int weaponAttackDamage = 0;
-        if(doesAttackHit) {
+        if (doesAttackHit) {
             // Determine damage.
             isCriticalHit = isCriticalHit(attackRoll);
             weaponAttackDamage = calculateWeaponAttackDamage();
-            if(isCriticalHit) {
+            if (isCriticalHit) {
                 weaponAttackDamage += rollDie(weaponDamageDie, false);
             }
 
             // Accumulate total weapon damage.
-            int totalWeaponDamage = totalWeaponDamageMap.get(enemyArmorClass).get(accuracyBonus);
-            totalWeaponDamageMap.get(enemyArmorClass).put(accuracyBonus, totalWeaponDamage+weaponAttackDamage);
+            int totalWeaponDamage = totalWeaponDamageMap.get(enemyArmorClass);
+            totalWeaponDamageMap.put(enemyArmorClass, totalWeaponDamage + weaponAttackDamage);
             // Accumulate total damage.
-            int totalDamage = totalDamageMap.get(enemyArmorClass).get(accuracyBonus);
-            totalDamageMap.get(enemyArmorClass).put(accuracyBonus, totalDamage+weaponAttackDamage);
+            int totalDamage = totalDamageMap.get(enemyArmorClass);
+            totalDamageMap.put(enemyArmorClass, totalDamage + weaponAttackDamage);
             // Increment total number of attacks hit.
-            int totalAttacksHit = totalNumWeaponAttacksHitMap.get(enemyArmorClass).get(accuracyBonus);
-            totalNumWeaponAttacksHitMap.get(enemyArmorClass).put(accuracyBonus, totalAttacksHit+1);
+            int totalAttacksHit = totalNumWeaponAttacksHitMap.get(enemyArmorClass);
+            totalNumWeaponAttacksHitMap.put(enemyArmorClass, totalAttacksHit + 1);
         }
         // Increment total number of attacks.
-        int totalAttacks = totalNumWeaponAttacksMap.get(enemyArmorClass).get(accuracyBonus);
-        totalNumWeaponAttacksMap.get(enemyArmorClass).put(accuracyBonus, totalAttacks+1);
+        int totalAttacks = totalNumWeaponAttacksMap.get(enemyArmorClass);
+        totalNumWeaponAttacksMap.put(enemyArmorClass, totalAttacks + 1);
 
         return new WeaponAttackResults(weaponAttackDamage, isCriticalHit, doesAttackHit);
     }
@@ -135,19 +138,19 @@ public abstract class BaseCombatClass implements CombatClass {
 
     protected static int rollDamage(int numberWeaponDamageDie, int damageDie, int statDamageBonus, int damageBonuses) {
         int damageRoll = 0;
-        for(int i = 0; i < numberWeaponDamageDie; i++) {
+        for (int i = 0; i < numberWeaponDamageDie; i++) {
             damageRoll += rollDie(damageDie, false);
         }
         return damageRoll + statDamageBonus + damageBonuses;
     }
 
     protected static int rollDie(int die, boolean advantage) {
-        int first = ThreadLocalRandom.current().nextInt(1, die+1);
-        if(!advantage) {
+        int first = ThreadLocalRandom.current().nextInt(1, die + 1);
+        if (!advantage) {
             return first;
         }
-        int second = ThreadLocalRandom.current().nextInt(1, die+1);
-        if(second > first) {
+        int second = ThreadLocalRandom.current().nextInt(1, die + 1);
+        if (second > first) {
             return second;
         } else {
             return first;
@@ -158,7 +161,7 @@ public abstract class BaseCombatClass implements CombatClass {
         return rollDie(20, advantage);
     }
 
-    protected static boolean determineHit(int d20Roll, int accuracyBonus, int armorClass) {
-        return (d20Roll + accuracyBonus) >= armorClass;
+    protected boolean determineHit(int attackRoll, int armorClass) {
+        return (attackRoll + statBonus) >= armorClass;
     }
 }

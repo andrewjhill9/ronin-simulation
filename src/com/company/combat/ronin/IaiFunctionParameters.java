@@ -1,16 +1,10 @@
 package com.company.combat.ronin;
 
 public class IaiFunctionParameters {
-    private final int accuracyBonus;
     private final int armorClass;
 
-    public IaiFunctionParameters(int accuracyBonus, int armorClass) {
-        this.accuracyBonus = accuracyBonus;
+    public IaiFunctionParameters(int armorClass) {
         this.armorClass = armorClass;
-    }
-
-    public int getAccuracyBonus() {
-        return accuracyBonus;
     }
 
     public int getArmorClass() {
