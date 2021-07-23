@@ -13,6 +13,7 @@ public class FireStanceRonin extends RoninCombatClass {
     protected final boolean isTargetMindsEye;
     protected final boolean canUseIgnite;
     protected final boolean canGainEnergyFromFear;
+    protected final boolean canGainEnergyFromCrit;
     protected final boolean canGainEnergyFromDamagingFeared;
     protected boolean isIgniteUsed = false;
     protected boolean isTargetBurning = false;
@@ -57,6 +58,7 @@ public class FireStanceRonin extends RoninCombatClass {
         this.canUseIgnite = characterLevel >= 2;
         this.canGainEnergyFromFear = characterLevel >= 6;
         this.canGainEnergyFromDamagingFeared = characterLevel >= 10;
+        this.canGainEnergyFromCrit = characterLevel >= 15;
         iaiToIaiMinimumCost.put(HIGANBANA_ID, 4);
         iaiToIaiBaseDieNumber.put(HIGANBANA_ID, 4);
         iaiToIaiDamageDie.put(HIGANBANA_ID, 12);
@@ -196,26 +198,39 @@ public class FireStanceRonin extends RoninCombatClass {
                 if(isEnemyFeared && canGainEnergyFromDamagingFeared) {
                     energyCharges+=1;
                     // Increment total number of elemental charges accumulated.
-                    int totalEnergyChargesAcc = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
-                    totalEnergyChargesAcc++;
-                    totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyChargesAcc);
+                    totalEnergyChargesAccumulatedMap.put(enemyArmorClass,
+                            totalEnergyChargesAccumulatedMap.get(enemyArmorClass) + 1);
                     // Increment total number of elemental charges accumulated from Lvl 10 feature.
                     totalEnergyChargesLvl10AccumulatedMap.put(enemyArmorClass,
                             totalEnergyChargesLvl10AccumulatedMap.get(enemyArmorClass) + 1);
                 }
+
+
+                energyCharges += 1;
                 // Increment total number of elemental charges accumulated from Lvl 3 feature.
                 totalEnergyChargesLvl3AccumulatedMap.put(enemyArmorClass,
                         totalEnergyChargesLvl3AccumulatedMap.get(enemyArmorClass) + 1);
-                energyCharges += 1;
                 // Increment total number of elemental charges accumulated.
-                int totalEnergyChargesAcc = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
-                totalEnergyChargesAcc++;
-                totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyChargesAcc);
+                totalEnergyChargesAccumulatedMap.put(enemyArmorClass,
+                        totalEnergyChargesAccumulatedMap.get(enemyArmorClass) + 1);
+
+
+                if(weaponAttackResults.isCrit()) {
+                    energyCharges += 1;
+                    // Increment total number of elemental charges accumulated from Lvl 15 feature.
+                    totalEnergyChargesLvl15AccumulatedMap.put(enemyArmorClass,
+                            totalEnergyChargesLvl15AccumulatedMap.get(enemyArmorClass) + 1);
+                    // Increment total number of elemental charges accumulated.
+                    totalEnergyChargesAccumulatedMap.put(enemyArmorClass,
+                            totalEnergyChargesAccumulatedMap.get(enemyArmorClass) + 1);
+                }
+
 
                 if (!isTargetBurning && canUseIgnite && !isIgniteUsed) {
                     isIgniteUsed = true;
                     isTargetBurning = true;
                 }
+
 
                 if(!hasEnemyBeenFeared) {
                     int wisdomSavingThrow = rollD20(false) + 3;
@@ -226,9 +241,8 @@ public class FireStanceRonin extends RoninCombatClass {
                         if(canGainEnergyFromFear) {
                             energyCharges+=1;
                             // Increment total number of elemental charges accumulated.
-                            totalEnergyChargesAcc = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
-                            totalEnergyChargesAcc++;
-                            totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyChargesAcc);
+                            totalEnergyChargesAccumulatedMap.put(enemyArmorClass,
+                                    totalEnergyChargesAccumulatedMap.get(enemyArmorClass) + 1);
                             // Increment total number of elemental charges accumulated from Lvl 6 feature.
                             totalEnergyChargesLvl6AccumulatedMap.put(enemyArmorClass,
                                     totalEnergyChargesLvl6AccumulatedMap.get(enemyArmorClass) + 1);
