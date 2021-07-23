@@ -14,6 +14,7 @@ public abstract class RoninCombatClass extends BaseCombatClass {
     protected final int maxEnergyCharges;
     protected final int chargesPerLimitBreak;
     protected final Map<Integer, Integer> iaiToIaiMinimumCost = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> iaiToIaiBaseDieNumber = new LinkedHashMap<>();
     protected final Map<Integer, Integer> iaiToIaiDamageDie = new LinkedHashMap<>();
     protected final Map<Integer, Integer> iaiToDiePerCharge = new LinkedHashMap<>();
     protected final Map<Integer, Integer> iaiToMinimumLevel = new LinkedHashMap<>();
@@ -22,6 +23,10 @@ public abstract class RoninCombatClass extends BaseCombatClass {
     // Outputs - Enemy Armor Class to Some result.
     protected final Map<Integer, Integer> totalNumIaiUsesMap = new LinkedHashMap<>();
     protected final Map<Integer, Integer> totalEnergyChargesAccumulatedMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalEnergyChargesLvl3AccumulatedMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalEnergyChargesLvl6AccumulatedMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalEnergyChargesLvl10AccumulatedMap = new LinkedHashMap<>();
+    protected final Map<Integer, Integer> totalEnergyChargesLvl15AccumulatedMap = new LinkedHashMap<>();
 
     public RoninCombatClass(String characterName,
                             int characterLevel,
@@ -39,6 +44,10 @@ public abstract class RoninCombatClass extends BaseCombatClass {
         for (int armorClass: ARMOR_CLASSES) {
             totalNumIaiUsesMap.computeIfAbsent(armorClass, k -> 0);
             totalEnergyChargesAccumulatedMap.computeIfAbsent(armorClass, k -> 0);
+            totalEnergyChargesLvl3AccumulatedMap.computeIfAbsent(armorClass, k -> 0);
+            totalEnergyChargesLvl6AccumulatedMap.computeIfAbsent(armorClass, k -> 0);
+            totalEnergyChargesLvl10AccumulatedMap.computeIfAbsent(armorClass, k -> 0);
+            totalEnergyChargesLvl15AccumulatedMap.computeIfAbsent(armorClass, k -> 0);
         }
     }
 
@@ -67,6 +76,29 @@ public abstract class RoninCombatClass extends BaseCombatClass {
             averageNumberElementalChargesPerTurn.put(entry.getKey(),  entry.getValue() / (double) numberOfTurns);
         }
 
+        final Map<Integer, Double> averageNumberElementalChargesLvl3PerTurn = new LinkedHashMap<>();
+        // Average out all attacks done and amount of hits.
+        for (Map.Entry<Integer, Integer> entry : totalEnergyChargesLvl3AccumulatedMap.entrySet()) {
+            averageNumberElementalChargesLvl3PerTurn.put(entry.getKey(),  entry.getValue() / (double) numberOfTurns);
+        }
+
+        final Map<Integer, Double> averageNumberElementalChargesLvl6PerTurn = new LinkedHashMap<>();
+        // Average out all attacks done and amount of hits.
+        for (Map.Entry<Integer, Integer> entry : totalEnergyChargesLvl6AccumulatedMap.entrySet()) {
+            averageNumberElementalChargesLvl6PerTurn.put(entry.getKey(),  entry.getValue() / (double) numberOfTurns);
+        }
+
+        final Map<Integer, Double> averageNumberElementalChargesLvl10PerTurn = new LinkedHashMap<>();
+        // Average out all attacks done and amount of hits.
+        for (Map.Entry<Integer, Integer> entry : totalEnergyChargesLvl10AccumulatedMap.entrySet()) {
+            averageNumberElementalChargesLvl10PerTurn.put(entry.getKey(),  entry.getValue() / (double) numberOfTurns);
+        }
+
+        final Map<Integer, Double> averageNumberElementalChargesLvl15PerTurn = new LinkedHashMap<>();
+        // Average out all attacks done and amount of hits.
+        for (Map.Entry<Integer, Integer> entry : totalEnergyChargesLvl15AccumulatedMap.entrySet()) {
+            averageNumberElementalChargesLvl15PerTurn.put(entry.getKey(),  entry.getValue() / (double) numberOfTurns);
+        }
 
         Map stats = super.getStatistics(numberOfTurns);
 
@@ -74,6 +106,10 @@ public abstract class RoninCombatClass extends BaseCombatClass {
         stats.put("totalEnergyChargesAccumulatedMap", totalEnergyChargesAccumulatedMap);
         stats.put("averageNumberTurnsPerIai", averageNumberTurnsPerIai);
         stats.put("averageNumberElementalChargesPerTurn", averageNumberElementalChargesPerTurn);
+        stats.put("averageNumberElementalChargesLvl3PerTurn", averageNumberElementalChargesLvl3PerTurn);
+        stats.put("averageNumberElementalChargesLvl6PerTurn", averageNumberElementalChargesLvl6PerTurn);
+        stats.put("averageNumberElementalChargesLvl10PerTurn", averageNumberElementalChargesLvl10PerTurn);
+        stats.put("averageNumberElementalChargesLvl15PerTurn", averageNumberElementalChargesLvl15PerTurn);
 
         return stats;
     }

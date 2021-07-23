@@ -12,8 +12,12 @@ public class FireStanceRonin extends RoninCombatClass {
     protected static final int HIGANBANA_ID = 0;
     protected final boolean isTargetMindsEye;
     protected final boolean canUseIgnite;
+    protected final boolean canGainEnergyFromFear;
+    protected final boolean canGainEnergyFromDamagingFeared;
     protected boolean isIgniteUsed = false;
     protected boolean isTargetBurning = false;
+    protected boolean hasEnemyBeenFeared = false;
+    protected boolean isEnemyFeared = false;
 
     // Outputs - Enemy Armor Class to Some result.
     protected final Map<Integer, Integer> totalHiganbanaDamageMap = new LinkedHashMap<>();
@@ -51,7 +55,10 @@ public class FireStanceRonin extends RoninCombatClass {
         super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
         this.isTargetMindsEye = isTargetMindsEye;
         this.canUseIgnite = characterLevel >= 2;
-        iaiToIaiMinimumCost.put(HIGANBANA_ID, 5);
+        this.canGainEnergyFromFear = characterLevel >= 6;
+        this.canGainEnergyFromDamagingFeared = characterLevel >= 10;
+        iaiToIaiMinimumCost.put(HIGANBANA_ID, 4);
+        iaiToIaiBaseDieNumber.put(HIGANBANA_ID, 4);
         iaiToIaiDamageDie.put(HIGANBANA_ID, 12);
         iaiToDiePerCharge.put(HIGANBANA_ID, 1);
         iaiToMinimumLevel.put(HIGANBANA_ID, 3);
@@ -71,14 +78,24 @@ public class FireStanceRonin extends RoninCombatClass {
 
             if (hitSuccess) {
                 boolean critHit = isCriticalHit((higanbanaAttackRoll));
+                // Number of damage die is equal to the base # of dice
+                // plus how many dice are awarded for each charge spent over the minimum cost.
+                int numDamageDie = iaiToIaiBaseDieNumber.get(HIGANBANA_ID)
+                        + (iaiToDiePerCharge.get(HIGANBANA_ID) * (energyCharges - iaiToIaiMinimumCost.get(HIGANBANA_ID)));
 
-                int higanbanaDamage = 0;
-                for (int i = 0; i < energyCharges; i += iaiToDiePerCharge.get(HIGANBANA_ID)) {
-                    if (critHit) {
-                        higanbanaDamage += rollDie(iaiToIaiDamageDie.get(HIGANBANA_ID), false) + rollDie(iaiToIaiDamageDie.get(HIGANBANA_ID), false);
-                    } else {
-                        higanbanaDamage += rollDie(iaiToIaiDamageDie.get(HIGANBANA_ID), false);
-                    }
+                int higanbanaDamage = rollDamage(
+                        numDamageDie,
+                        iaiToIaiDamageDie.get(HIGANBANA_ID),
+                        statBonus,
+                        0
+                );
+                if (critHit) {
+                    higanbanaDamage += rollDamage(
+                            numDamageDie,
+                            iaiToIaiDamageDie.get(HIGANBANA_ID),
+                            0,
+                            0
+                    );
                 }
                 // Accumulate total damage.
                 int totalDamage = totalDamageMap.get(armorClass);
@@ -96,6 +113,8 @@ public class FireStanceRonin extends RoninCombatClass {
                 // Ignite the enemy.
                 isTargetBurning = true;
             }
+
+            energyCharges = 0;
             return null;
         };
 
@@ -109,6 +128,8 @@ public class FireStanceRonin extends RoninCombatClass {
         super.doShortRest();
         isIgniteUsed = false;
         isTargetBurning = false;
+        hasEnemyBeenFeared = false;
+        isEnemyFeared = false;
     }
 
     @Override
@@ -116,10 +137,26 @@ public class FireStanceRonin extends RoninCombatClass {
         super.doLongRest();
         isIgniteUsed = false;
         isTargetBurning = false;
+        hasEnemyBeenFeared = false;
+        isEnemyFeared = false;
     }
 
     @Override
-    public void doCombatTurn(int enemyArmorClass) {
+    public void doCombatTurn(int enemyArmorClass, int combatNumberSinceLastRest, int combatRound, int remainingCombatRounds) {
+        if(combatRound == 0) {
+            isEnemyFeared = false;
+            hasEnemyBeenFeared = false;
+            isTargetBurning = false;
+        }
+
+        // Enemy gets to try to break fear.
+        if(isEnemyFeared) {
+            int wisdomSavingThrow = rollD20(false) + 3;
+            if (wisdomSavingThrow >= swordArtDc) {
+                isEnemyFeared = false;
+            }
+        }
+
         // Simulate Ignite damage.
         if (isTargetBurning) {
             // Increment total number of ignite turns.
@@ -135,26 +172,40 @@ public class FireStanceRonin extends RoninCombatClass {
         }
 
         // Decide what to do during turn.
-        if (energyCharges == 0 && !usedLimitBreak && canUseLimitBreak) {
-            // Use Limit Break and then Iai
+        if (((maxEnergyCharges - energyCharges) >= chargesPerLimitBreak) && !usedLimitBreak && canUseLimitBreak) {
+            // Use Limit Break.
             usedLimitBreak = true;
             energyCharges += chargesPerLimitBreak;
             int totalEnergyCharges = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
             totalEnergyCharges += chargesPerLimitBreak;
             totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyCharges);
+        }
 
-            executeIai(enemyArmorClass, HIGANBANA_ID);
-            energyCharges = 0;
+        // TODO Put more thorough logic in here about using charges appropriately.
 
-        } else if (energyCharges >= iaiToIaiMinimumCost.get(HIGANBANA_ID)) {
+//        if (energyCharges == maxEnergyCharges ||
+//                (energyCharges >= iaiToIaiMinimumCost.get(HIGANBANA_ID) && remainingCombatRounds == 0)
+        if(energyCharges >= iaiToIaiMinimumCost.get(HIGANBANA_ID)) {
             // Use Iai to avoid over-capping.
             executeIai(enemyArmorClass, HIGANBANA_ID);
-            energyCharges = 0;
-
         } else {
+
             // Attack normally.
-            WeaponAttackResults weaponAttackResults = doWeaponAttack(enemyArmorClass);
+            WeaponAttackResults weaponAttackResults = doWeaponAttack(enemyArmorClass, false, false);
             if (weaponAttackResults.didHit()) {
+                if(isEnemyFeared && canGainEnergyFromDamagingFeared) {
+                    energyCharges+=1;
+                    // Increment total number of elemental charges accumulated.
+                    int totalEnergyChargesAcc = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
+                    totalEnergyChargesAcc++;
+                    totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyChargesAcc);
+                    // Increment total number of elemental charges accumulated from Lvl 10 feature.
+                    totalEnergyChargesLvl10AccumulatedMap.put(enemyArmorClass,
+                            totalEnergyChargesLvl10AccumulatedMap.get(enemyArmorClass) + 1);
+                }
+                // Increment total number of elemental charges accumulated from Lvl 3 feature.
+                totalEnergyChargesLvl3AccumulatedMap.put(enemyArmorClass,
+                        totalEnergyChargesLvl3AccumulatedMap.get(enemyArmorClass) + 1);
                 energyCharges += 1;
                 // Increment total number of elemental charges accumulated.
                 int totalEnergyChargesAcc = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
@@ -164,6 +215,25 @@ public class FireStanceRonin extends RoninCombatClass {
                 if (!isTargetBurning && canUseIgnite && !isIgniteUsed) {
                     isIgniteUsed = true;
                     isTargetBurning = true;
+                }
+
+                if(!hasEnemyBeenFeared) {
+                    int wisdomSavingThrow = rollD20(false) + 3;
+                    if (wisdomSavingThrow < swordArtDc) {
+                        hasEnemyBeenFeared = true;
+                        isEnemyFeared = true;
+
+                        if(canGainEnergyFromFear) {
+                            energyCharges+=1;
+                            // Increment total number of elemental charges accumulated.
+                            totalEnergyChargesAcc = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
+                            totalEnergyChargesAcc++;
+                            totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyChargesAcc);
+                            // Increment total number of elemental charges accumulated from Lvl 6 feature.
+                            totalEnergyChargesLvl6AccumulatedMap.put(enemyArmorClass,
+                                    totalEnergyChargesLvl6AccumulatedMap.get(enemyArmorClass) + 1);
+                        }
+                    }
                 }
             }
         }

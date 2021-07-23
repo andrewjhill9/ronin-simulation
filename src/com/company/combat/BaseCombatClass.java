@@ -73,6 +73,12 @@ public abstract class BaseCombatClass implements CombatClass {
             averageTotalWeaponDamagePerTurnMap.put(entry.getKey(), entry.getValue() / (double) numberOfTurns);
         }
 
+        final Map<Integer, Double> percentDamageFromWeaponAttacks = new LinkedHashMap<>();
+        // Average out all attacks done and amount of hits.
+        for (Map.Entry<Integer, Integer> entry : totalWeaponDamageMap.entrySet()) {
+            percentDamageFromWeaponAttacks.put(entry.getKey(),  100.0 * entry.getValue() / totalDamageMap.get(entry.getKey()));
+        }
+
         final Map<Integer, Double> attackAccuracyMap = new LinkedHashMap<>();
         // Average out all attacks done and amount of hits.
         for (Map.Entry<Integer, Integer> entry : totalNumWeaponAttacksMap.entrySet()) {
@@ -87,6 +93,7 @@ public abstract class BaseCombatClass implements CombatClass {
         stats.put("totalNumAttacksMap", totalNumWeaponAttacksMap);
         stats.put("totalDamageMap", totalDamageMap);
         stats.put("totalWeaponDamageMap", totalWeaponDamageMap);
+        stats.put("percentDamageFromWeaponAttacks", percentDamageFromWeaponAttacks);
         stats.put("attackAccuracyMap", attackAccuracyMap);
         stats.put("averageTotalDamagePerTurnMap", averageTotalDamagePerTurnMap);
         stats.put("averageTotalWeaponDamagePerTurnMap", averageTotalWeaponDamagePerTurnMap);
@@ -97,15 +104,18 @@ public abstract class BaseCombatClass implements CombatClass {
     /**
      * @return 0 if weapon attack misses. 1 if weapon attack hits. 2 if weapon attack crits.
      */
-    protected WeaponAttackResults doWeaponAttack(int enemyArmorClass) {
+    protected WeaponAttackResults doWeaponAttack(int enemyArmorClass, boolean guaranteedCrit, boolean advantage) {
         // Attack normally.
-        int attackRoll = rollD20(false);
+        int attackRoll = rollD20(advantage);
         boolean doesAttackHit = determineHit(attackRoll, enemyArmorClass);
-        boolean isCriticalHit = false;
+        boolean isCriticalHit = guaranteedCrit;
         int weaponAttackDamage = 0;
         if (doesAttackHit) {
             // Determine damage.
-            isCriticalHit = isCriticalHit(attackRoll);
+            if(!guaranteedCrit) {
+                // Only roll for crit if crit isn't guaranteed.
+                isCriticalHit = isCriticalHit(attackRoll);
+            }
             weaponAttackDamage = calculateWeaponAttackDamage();
             if (isCriticalHit) {
                 weaponAttackDamage += rollDie(weaponDamageDie, false);
@@ -124,6 +134,12 @@ public abstract class BaseCombatClass implements CombatClass {
         // Increment total number of attacks.
         int totalAttacks = totalNumWeaponAttacksMap.get(enemyArmorClass);
         totalNumWeaponAttacksMap.put(enemyArmorClass, totalAttacks + 1);
+
+        // Determine if this turn's attack was the largest yet.
+        int singleLargestAttackDamage = singleLargestAttackDamageMap.get(enemyArmorClass);
+        if(weaponAttackDamage > singleLargestAttackDamage) {
+            singleLargestAttackDamageMap.put(enemyArmorClass, weaponAttackDamage);
+        }
 
         return new WeaponAttackResults(weaponAttackDamage, isCriticalHit, doesAttackHit);
     }

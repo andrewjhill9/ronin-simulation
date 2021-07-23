@@ -34,9 +34,7 @@ public abstract class FighterCombatClass extends BaseCombatClass {
         }
 
         // Populate the AC -> ACC Bonus map plus initialize the output maps with zero values to avoid NPEs.
-//        for (int armorClass = 10; armorClass <= 25; armorClass++) {
-//            for (int accBonus = 5; accBonus <= 9; accBonus++) {
-//            }
+//        for (int armorClass: ARMOR_CLASSES) {
 //        }
     }
 
@@ -58,7 +56,7 @@ public abstract class FighterCombatClass extends BaseCombatClass {
     protected List<WeaponAttackResults> doMultiAttack(int enemyArmorClass) {
         List<WeaponAttackResults> results = new ArrayList<>();
         for(int i = 0; i < multiAttackNumber; i++) {
-            results.add(doWeaponAttack(enemyArmorClass));
+            results.add(doWeaponAttack(enemyArmorClass, false, false));
         }
         return results;
     }
