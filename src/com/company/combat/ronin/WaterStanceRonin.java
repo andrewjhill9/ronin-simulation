@@ -90,7 +90,7 @@ public class WaterStanceRonin extends RoninCombatClass {
       }
 
       // Determine if lvl 10 EM charge ability kicks in.
-      if(characterLevel >= 10 && numberOfRyuRyuMaiEnemies >= 3) {
+      if(characterLevel >= 10 && totalRyuRyuHits >= 3) {
         energyCharges += 1;
         // Increment total number of elemental charges accumulated.
         totalEnergyChargesAccumulatedMap.put(armorClass, totalEnergyChargesAccumulatedMap.get(armorClass) + 1);
@@ -139,9 +139,8 @@ public class WaterStanceRonin extends RoninCombatClass {
       // Use Limit Break and then Iai
       usedLimitBreak = true;
       energyCharges += chargesPerLimitBreak;
-      int totalEnergyCharges = totalEnergyChargesAccumulatedMap.get(enemyArmorClass);
-      totalEnergyCharges += chargesPerLimitBreak;
-      totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyCharges);
+      // Increment total number of elemental charges accumulated.
+      totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyChargesAccumulatedMap.get(enemyArmorClass) + chargesPerLimitBreak);
     }
 
     if(energyCharges >= iaiToIaiMinimumCost.get(RYURYUMAI_ID)) {

@@ -119,8 +119,7 @@ public abstract class RoninCombatClass extends BaseCombatClass {
       int iaiId
   ) {
     // Increment total number of Iai uses.
-    int totalIaiUses = totalNumIaiUsesMap.get(armorClass);
-    totalNumIaiUsesMap.put(armorClass, totalIaiUses + 1);
+    totalNumIaiUsesMap.put(armorClass, totalNumIaiUsesMap.get(armorClass) + 1);
 
     iaiIdToIaiExecutionFunction.get(iaiId).apply(new IaiFunctionParameters(armorClass));
   }

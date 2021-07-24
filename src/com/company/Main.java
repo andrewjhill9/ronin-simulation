@@ -43,8 +43,8 @@ public class Main {
     final CombatClass waterRoninLevel6_2_3 = new WaterStanceRonin("Water Ronin LVL 06/2/3", 6, 1, 8, 4, 19, true, 2, 3);
     final CombatClass waterRoninLevel7_2_3 = new WaterStanceRonin("Water Ronin LVL 07/2/3", 7, 1, 8, 4, 19, true, 2, 3);
     final CombatClass waterRoninLevel8_2_3 = new WaterStanceRonin("Water Ronin LVL 08/2/3", 8, 1, 8, 5, 19, true, 2, 3);
-    final CombatClass waterRoninLevel9_2_3 = new WaterStanceRonin("Water Ronin LVL 09/2/3", 9, 1, 8, 4, 19, true, 2, 3);
-    final CombatClass waterRoninLevel10_2_3 = new WaterStanceRonin("Water Ronin LVL 10/2/3", 5, 1, 8, 4, 18, true, 2, 3);
+    final CombatClass waterRoninLevel9_2_3 = new WaterStanceRonin("Water Ronin LVL 09/2/3", 9, 1, 8, 5, 19, true, 2, 3);
+    final CombatClass waterRoninLevel10_2_3 = new WaterStanceRonin("Water Ronin LVL 10/2/3", 10, 1, 8, 5, 19, true, 2, 3);
     final CombatClass waterRoninLevel11_2_3 = new WaterStanceRonin("Water Ronin LVL 11/2/3", 11, 1, 8, 5, 18, true, 2, 3);
     final CombatClass championFighterLevel3 = new ChampionFighter("Champion Fighter LVL 3", 3, 2, 6, 3, 19);
     final CombatClass championFighterLevel5 = new ChampionFighter("Champion Fighter LVL 5", 5, 2, 6, 4, 19);
