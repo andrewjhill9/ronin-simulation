@@ -20,9 +20,8 @@ public abstract class RogueCombatClass extends BaseCombatClass {
                             int numberWeaponDamageDie,
                             int weaponDamageDie,
                             int statBonus,
-                            int critDie,
-                            int proficiencyBonus) {
-        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
+                            int critDie) {
+        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie);
         if (characterLevel >= 19) {
             this.sneakAttackNumberOfDie = 10;
         } else if (characterLevel >= 17) {

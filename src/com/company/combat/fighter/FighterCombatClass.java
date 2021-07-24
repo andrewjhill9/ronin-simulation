@@ -19,9 +19,8 @@ public abstract class FighterCombatClass extends BaseCombatClass {
                               int numberWeaponDamageDie,
                               int weaponDamageDie,
                               int statBonus,
-                              int critDie,
-                              int proficiencyBonus) {
-        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
+                              int critDie) {
+        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie);
         this.isActionSurgeUnlocked = characterLevel >= 2;
         if(characterLevel >= 20) {
             this.multiAttackNumber = 4;

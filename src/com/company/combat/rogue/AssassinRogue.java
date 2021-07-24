@@ -13,9 +13,8 @@ public class AssassinRogue extends RogueCombatClass {
                          int numberWeaponDamageDie,
                          int weaponDamageDie,
                          int statBonus,
-                         int critDie,
-                         int proficiencyBonus) {
-        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
+                         int critDie) {
+        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie);
     }
 
     @Override

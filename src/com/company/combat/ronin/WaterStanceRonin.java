@@ -12,20 +12,8 @@ public class WaterStanceRonin extends RoninCombatClass {
   protected static final int SPLASH_DAMAGE_DIE = 4;
 
   static {
-    splashNumberOfDie = (charLevel) -> { // equal to proficiency bonus at that level
-      if(charLevel >= 20) {
-        return 6;
-      } else if(charLevel >= 15) {
-        return 5;
-      } else if(charLevel >= 10) {
-        return 4;
-      } else if(charLevel >= 5) {
-        return 3;
-      } else if(charLevel >= 2) {
-        return 2;
-      } else {
-        return 0;
-      }
+    splashNumberOfDie = (proficiencyBonus) -> { // equal to proficiency bonus at that level
+      return proficiencyBonus;
     };
   }
 
@@ -48,12 +36,11 @@ public class WaterStanceRonin extends RoninCombatClass {
       int weaponDamageDie,
       int statBonus,
       int critDie,
-      int proficiencyBonus,
       boolean isTargetMindsEye,
       int numberOfSplashEnemies,
       int numberOfRyuRyuMaiEnemies
   ) {
-    super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
+    super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie);
     this.isTargetMindsEye = isTargetMindsEye;
     this.canUseIgnite = characterLevel >= 2;
     this.numberOfSplashEnemies = numberOfSplashEnemies;
@@ -184,7 +171,7 @@ public class WaterStanceRonin extends RoninCombatClass {
         }
 
         // Determine if lvl 10 EM charge ability kicks in.
-        if(characterLevel >= 10 && numberOfSplashEnemies >= 3) {
+        if(characterLevel >= 10 && numberOfSplashEnemies >= 2) {
           energyCharges += 1;
           // Increment total number of elemental charges accumulated.
           totalEnergyChargesAccumulatedMap.put(enemyArmorClass, totalEnergyChargesAccumulatedMap.get(enemyArmorClass) + 1);
@@ -196,7 +183,7 @@ public class WaterStanceRonin extends RoninCombatClass {
   }
 
   protected void doSplashDamage(int enemyArmorClass) {
-    int splashDamage = rollDamage(splashNumberOfDie.apply(characterLevel), SPLASH_DAMAGE_DIE, 0, 0, false);
+    int splashDamage = rollDamage(splashNumberOfDie.apply(proficiencyBonus), SPLASH_DAMAGE_DIE, 0, 0, false);
     boolean savingThrow = (rollD20(false) + 3) >= swordArtDc;
     if(savingThrow) {
       splashDamage = splashDamage / 2;

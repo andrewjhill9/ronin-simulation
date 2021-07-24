@@ -33,9 +33,8 @@ public abstract class RoninCombatClass extends BaseCombatClass {
                             int numberWeaponDamageDie,
                             int weaponDamageDie,
                             int statBonus,
-                            int critDie,
-                            int proficiencyBonus) {
-        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
+                            int critDie) {
+        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie);
         this.canUseLimitBreak = characterLevel >= 5;
         this.maxEnergyCharges = characterLevel * 2;
         this.chargesPerLimitBreak = characterLevel;

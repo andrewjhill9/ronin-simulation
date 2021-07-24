@@ -37,9 +37,8 @@ public class FireStanceRonin extends RoninCombatClass {
                            int weaponDamageDie,
                            int statBonus,
                            int critDie,
-                           int proficiencyBonus,
                            boolean isTargetMindsEye) {
-        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie, proficiencyBonus);
+        super(characterName, characterLevel, numberWeaponDamageDie, weaponDamageDie, statBonus, critDie);
         this.isTargetMindsEye = isTargetMindsEye;
         this.canGainEnergyFromIgnite = characterLevel >= 6;
         this.canGainEnergyFromDamagingBurning = characterLevel >= 10;

@@ -35,15 +35,25 @@ public abstract class BaseCombatClass implements CombatClass {
                            int numberWeaponDamageDie,
                            int weaponDamageDie,
                            int statBonus,
-                           int critDie,
-                           int proficiencyBonus) {
+                           int critDie) {
         this.characterName = characterName;
         this.characterLevel = characterLevel;
         this.numberWeaponDamageDie = numberWeaponDamageDie;
         this.weaponDamageDie = weaponDamageDie;
         this.statBonus = statBonus;
         this.critDie = critDie;
-        this.proficiencyBonus = proficiencyBonus;
+
+      if(characterLevel >= 17) {
+        this.proficiencyBonus = 6;
+      } else if(characterLevel >= 13) {
+        this.proficiencyBonus = 5;
+      } else if(characterLevel >= 9) {
+        this.proficiencyBonus = 4;
+      } else if(characterLevel >= 5) {
+        this.proficiencyBonus = 3;
+      } else {
+        this.proficiencyBonus = 2;
+      }
 
         for (int armorClass: ARMOR_CLASSES) {
             totalDamageMap.computeIfAbsent(armorClass, k -> 0);
