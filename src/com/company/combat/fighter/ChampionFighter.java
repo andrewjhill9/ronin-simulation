@@ -24,11 +24,11 @@ public class ChampionFighter extends FighterCombatClass {
         if (!usedActionSurge && isActionSurgeUnlocked) {
             // Use Limit Break and then Iai
             usedActionSurge = true;
-            resultsList.addAll(doMultiAttack(enemyArmorClass));
-            resultsList.addAll(doMultiAttack(enemyArmorClass));
+            resultsList.addAll(doMultiAttack(enemyArmorClass, true));
+            resultsList.addAll(doMultiAttack(enemyArmorClass, true));
         } else {
             // Attack normally.
-            resultsList.addAll(doMultiAttack(enemyArmorClass));
+            resultsList.addAll(doMultiAttack(enemyArmorClass, true));
         }
 
         int totalDamageInTurn = 0;

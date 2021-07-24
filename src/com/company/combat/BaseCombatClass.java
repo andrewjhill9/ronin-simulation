@@ -104,7 +104,11 @@ public abstract class BaseCombatClass implements CombatClass {
     /**
      * @return 0 if weapon attack misses. 1 if weapon attack hits. 2 if weapon attack crits.
      */
-    protected WeaponAttackResults doWeaponAttack(int enemyArmorClass, boolean guaranteedCrit, boolean advantage) {
+    protected WeaponAttackResults doWeaponAttack(
+            int enemyArmorClass,
+            boolean guaranteedCrit,
+            boolean advantage,
+            boolean reRollLowDamage) {
         // Attack normally.
         int attackRoll = rollD20(advantage);
         boolean doesAttackHit = determineHit(attackRoll, enemyArmorClass);
@@ -116,9 +120,13 @@ public abstract class BaseCombatClass implements CombatClass {
                 // Only roll for crit if crit isn't guaranteed.
                 isCriticalHit = isCriticalHit(attackRoll);
             }
-            weaponAttackDamage = calculateWeaponAttackDamage();
+            weaponAttackDamage = calculateWeaponAttackDamage(reRollLowDamage);
             if (isCriticalHit) {
-                weaponAttackDamage += rollDie(weaponDamageDie, false);
+                int critDmg = rollDie(weaponDamageDie, false);
+                if(reRollLowDamage && critDmg <= 2) {
+                    critDmg = rollDie(weaponDamageDie, false);
+                }
+                weaponAttackDamage += critDmg;
             }
 
             // Accumulate total weapon damage.
@@ -144,20 +152,24 @@ public abstract class BaseCombatClass implements CombatClass {
         return new WeaponAttackResults(weaponAttackDamage, isCriticalHit, doesAttackHit);
     }
 
-    protected int calculateWeaponAttackDamage() {
-        return rollDamage(numberWeaponDamageDie, weaponDamageDie, statBonus, 0);
+    protected int calculateWeaponAttackDamage(boolean reRollLowDamage) {
+        return rollDamage(numberWeaponDamageDie, weaponDamageDie, statBonus, 0, reRollLowDamage);
     }
 
     protected boolean isCriticalHit(int roll) {
         return roll >= critDie;
     }
 
-    protected static int rollDamage(int numberWeaponDamageDie, int damageDie, int statDamageBonus, int damageBonuses) {
-        int damageRoll = 0;
+    protected static int rollDamage(int numberWeaponDamageDie, int damageDie, int statDamageBonus, int damageBonuses, boolean reRollLowDamage) {
+        int totalDamage = 0;
         for (int i = 0; i < numberWeaponDamageDie; i++) {
-            damageRoll += rollDie(damageDie, false);
+            int damageRoll = rollDie(damageDie, false);
+            if(reRollLowDamage) {
+                damageRoll = rollDie(damageDie, false);
+            }
+            totalDamage += damageRoll;
         }
-        return damageRoll + statDamageBonus + damageBonuses;
+        return totalDamage + statDamageBonus + damageBonuses;
     }
 
     protected static int rollDie(int die, boolean advantage) {
@@ -166,11 +178,7 @@ public abstract class BaseCombatClass implements CombatClass {
             return first;
         }
         int second = ThreadLocalRandom.current().nextInt(1, die + 1);
-        if (second > first) {
-            return second;
-        } else {
-            return first;
-        }
+        return Math.max(second, first);
     }
 
     protected static int rollD20(boolean advantage) {

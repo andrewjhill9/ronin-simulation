@@ -53,10 +53,10 @@ public abstract class FighterCombatClass extends BaseCombatClass {
         return super.getStatistics(numberOfTurns);
     }
 
-    protected List<WeaponAttackResults> doMultiAttack(int enemyArmorClass) {
+    protected List<WeaponAttackResults> doMultiAttack(int enemyArmorClass, boolean reRollLowDamage) {
         List<WeaponAttackResults> results = new ArrayList<>();
         for(int i = 0; i < multiAttackNumber; i++) {
-            results.add(doWeaponAttack(enemyArmorClass, false, false));
+            results.add(doWeaponAttack(enemyArmorClass, false, false, reRollLowDamage));
         }
         return results;
     }

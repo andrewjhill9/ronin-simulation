@@ -23,10 +23,10 @@ public class AssassinRogue extends RogueCombatClass {
         List<WeaponAttackResults> resultsList = new ArrayList<>();
         if(combatRound == 0) {
             // Do assassinate damage.
-            resultsList.add(doWeaponAttack(enemyArmorClass, true, false));
+            resultsList.add(doWeaponAttack(enemyArmorClass, true, false, false));
         } else {
             // Attack normally.
-            resultsList.add(doWeaponAttack(enemyArmorClass, false, false));
+            resultsList.add(doWeaponAttack(enemyArmorClass, false, false, false));
         }
 
         int totalDamageInTurn = 0;

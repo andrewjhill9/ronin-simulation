@@ -62,7 +62,7 @@ public abstract class RogueCombatClass extends BaseCombatClass {
     }
 
     protected int doSneakAttack(int enemyArmorClass) {
-        int sneakAttackDamage =  rollDamage(sneakAttackNumberOfDie, SNEAK_ATTACK_DAMAGE_DIE, 0, 0);
+        int sneakAttackDamage =  rollDamage(sneakAttackNumberOfDie, SNEAK_ATTACK_DAMAGE_DIE, 0, 0, false);
         // Accumulate total damage.
         int totalDamage = totalDamageMap.get(enemyArmorClass);
         totalDamageMap.put(enemyArmorClass, totalDamage + sneakAttackDamage);
